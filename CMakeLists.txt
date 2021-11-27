@@ -192,7 +192,7 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
-catkin_install_python(PROGRAMS scripts/piece_detector.py scripts/piece_detector_logging.py scripts/nn_chess_detector.py
+catkin_install_python(PROGRAMS scripts/piece_detector.py scripts/piece_detector_logging.py scripts/move_piece.py scripts/test.py scripts/chess_piece_detector.py scripts/home.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
