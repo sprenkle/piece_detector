@@ -11,13 +11,22 @@
   <arg name="use_rviz"                          default="true"/>
   <arg name="motor_configs"                     default="$(find interbotix_xsarm_control)/config/$(arg robot_model).yaml"/>
   <arg name="mode_configs"                      default="$(find interbotix_xsarm_control)/config/modes.yaml"/>
-  <arg name="load_configs"                      default="true"/>
+  <arg name="load_configs"                      default="false"/>
   <arg name="use_sim"                           default="false"/>
+
+  <arg name="filters"                           default="pointcloud"/>
+  <arg name="color_fps"                         default="30"/>
+  <arg name="color_width"                       default="640"/>
+  <arg name="color_height"                      default="480"/>
+  <arg name="depth_fps"                         default="30"/>
+  <arg name="depth_width"                       default="640"/>
+  <arg name="depth_height"                      default="480"/>
+
 
   <arg name="xs_sdk_type" value="xs_sdk" unless="$(arg use_sim)"/>
   <arg name="xs_sdk_type" value="xs_sdk_sim" if="$(arg use_sim)"/>
 
-  <include file="$(find interbotix_xsarm_descriptions)/launch/xsarm_description.launch">
+  <!-- <include file="$(find interbotix_xsarm_descriptions)/launch/xsarm_description.launch">
     <arg name="robot_model"                       value="$(arg robot_model)"/>
     <arg name="robot_name"                        value="$(arg robot_name)"/>
     <arg name="base_link_frame"                   value="$(arg base_link_frame)"/>
@@ -38,6 +47,24 @@
     <param name="motor_configs"                   value="$(arg motor_configs)"/>
     <param name="mode_configs"                    value="$(arg mode_configs)"/>
     <param name="load_configs"                    value="$(arg load_configs)"/>
-  </node>
+  </node> -->
+
+
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="filters"                           value="$(arg filters)"/>
+    <arg name="color_fps"                         value="$(arg color_fps)"/>
+    <arg name="color_width"                       value="$(arg color_width)"/>
+    <arg name="color_height"                      value="$(arg color_height)"/>
+    <arg name="depth_fps"                         value="$(arg depth_fps)"/>
+    <arg name="depth_width"                       value="$(arg depth_width)"/>
+    <arg name="depth_height"                      value="$(arg depth_height)"/>
+  </include>
+
+
+
+    <node pkg="piece_detector" name="piece_detector" type="piece_detector.py" output="screen"/>
+    <node pkg="piece_detector" name="chess_piece_detector" type="chess_piece_detector.py" output="screen"/>
+
+
 
 </launch>

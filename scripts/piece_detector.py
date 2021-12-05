@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import rospy
-from game_msgs.msg import Whatboard
 from game_msgs.msg import Piecedetected
 from game_msgs.msg import Gamefield
 from sensor_msgs.msg import Image as msg_Image
@@ -9,9 +8,9 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import os 
 import sys
-from chessbot import board 
+#from chessbot import board 
 from chessbot import nn_chess_detector 
-from chessbot import chess_board 
+#from chessbot import chess_board 
 from game_msgs.srv import MovePieceCmd, MovePieceCmdRequest
 from std_msgs.msg import String
 
