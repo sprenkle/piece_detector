@@ -26,7 +26,7 @@
   <arg name="xs_sdk_type" value="xs_sdk" unless="$(arg use_sim)"/>
   <arg name="xs_sdk_type" value="xs_sdk_sim" if="$(arg use_sim)"/>
 
-  <!-- <include file="$(find interbotix_xsarm_descriptions)/launch/xsarm_description.launch">
+  <include file="$(find interbotix_xsarm_descriptions)/launch/xsarm_description.launch">
     <arg name="robot_model"                       value="$(arg robot_model)"/>
     <arg name="robot_name"                        value="$(arg robot_name)"/>
     <arg name="base_link_frame"                   value="$(arg base_link_frame)"/>
@@ -47,7 +47,7 @@
     <param name="motor_configs"                   value="$(arg motor_configs)"/>
     <param name="mode_configs"                    value="$(arg mode_configs)"/>
     <param name="load_configs"                    value="$(arg load_configs)"/>
-  </node> -->
+  </node>
 
 
   <include file="$(find realsense2_camera)/launch/rs_camera.launch">

@@ -1,5 +1,4 @@
 import rospy
-from game_msgs.msg import Piecedetected
 from game_msgs.msg import Gamefield
 from game_msgs.msg import PieceMove
 from sensor_msgs.msg import Image as msg_Image
@@ -8,7 +7,7 @@ import cv2
 import os 
 import sys
 from chessbot import board 
-from game_msgs.srv import MovePieceCmd, MovePieceCmdRequest
+#from game_msgs.srv import MovePieceCmd, MovePieceCmdRequest
 from std_msgs.msg import String
 import numpy as np
 
