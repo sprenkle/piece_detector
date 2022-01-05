@@ -1,5 +1,6 @@
 from interbotix_xs_modules.arm import InterbotixManipulatorXS
 from apriltag_ros.msg import AprilTagDetectionArray
+from interbotix_common_modules import angle_manipulation as ang
 
 import numpy as np
 import time
@@ -53,26 +54,42 @@ def move(x, y, z, roll, pitch, yaw, tr):
     am = np.matmul(am[:3], temp)
     return am
 
-x = 0.286 # DON'T Touch
-y = -.138 # DON'T Touch
-z = 0.09 # DON'T Touch
+def get_transform():
+    T_TargetSource = ang.poseToTransformationMatrix([0.247, -.11875, .016, 0.247, -.11875, .016])
+    return T_TargetSource
 
-x = 0.1949123792094417
-y = 0.44149402513241925
-z = -0.17835945650801005
 
-tr = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[x,y,z,1]])
+# x = 0.286 # DON'T Touch
+# y = -.138 # DON'T Touch
+# z = 0.09 # DON'T Touch
 
-roll = 0.02 # about x axis
-pitch = 0.03 # about y axis  -.09
-yaw = -0.06 # LEAVE about z axis  -.05
+# x = 0.1949123792094417
+# y = 0.44149402513241925
+# z = -0.17835945650801005
 
-bot.arm.go_to_home_pose()
-am = move(.125, .125, .028, roll, pitch, yaw, tr)
-#am = move(.125, .125, .028, roll, pitch, yaw, tr)
-print(am)
-bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2])
-# time.sleep(3)
+# tr = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[x,y,z,1]])
 
+# roll = 0.02 # about x axis
+# pitch = 0.03 # about y axis  -.09
+# yaw = -0.06 # LEAVE about z axis  -.05
 
 # bot.arm.go_to_home_pose()
+
+
+
+# am = move(.125, .125, .028, roll, pitch, yaw, tr)
+#am = move(.125, .125, .028, roll, pitch, yaw, tr)
+# print(am)
+# bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2])
+m = np.array([.125, .125, .048, 1])
+print(m)
+t = get_transform()
+print(t)
+am = np.dot(m,t)
+print(am)
+bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2])
+
+time.sleep(1)
+
+
+#bot.arm.go_to_home_pose()

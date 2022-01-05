@@ -227,7 +227,7 @@ am = move(.125, .125, .028)
 
 
 
-# time.sleep(3)
+time.sleep(3)
 bot.arm.go_to_home_pose()
 #time.sleep(1)
 
