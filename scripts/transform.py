@@ -1,6 +1,5 @@
 #!/usr/bin/env python3  
 import rospy
-
 import math
 import tf2_ros
 import geometry_msgs.msg
@@ -45,6 +44,49 @@ if __name__ == '__main__':
  #   transtamped = tf2_ros.Buffer()
     tfBuffer = tf2_ros.Buffer()
     listener = tf2_ros.TransformListener(tfBuffer)
+    # trans = TransformStamped()
+    trans = get_transform(tfBuffer,'rx200/base_link', 'rx200/board')
+
+
+    # listener = tf2_ros.TransformListener(tfBuffer)
+    # print(rospy.get_published_topics())
+
+    # # rate = rospy.Rate(10.0)
+    # # while not rospy.is_shutdown():
+    # # try:
+    # trans = tfBuffer.lookup_transform('rx200/board','rx200/base_link', rospy.Time())
+    #     # break                        rx200/base_link
+    # # except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+    #     # rate.sleep()
+    #     # continue
+
+    print(trans)
+
+
+    print('Move Robot')
+
+    bot.arm.go_to_home_pose()
+    
+    position = np.array([0, 0, 0, 1])
+    am = np.matmul(trans, position)
+    # bot.arm.set_ee_pose_components(x=am[0] + .03, y=am[1] - .01, z=am[2] + .05)
+    bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2] + .05)
+
+    time.sleep(2)
+    position = np.array([0, .25, 0, 1])
+    am = np.matmul(trans, position)
+    bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2] + .05)
+
+    time.sleep(2)
+    position = np.array([.25, .25, 0, 1])
+    am = np.matmul(trans, position)
+    bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2] + .05)
+
+    time.sleep(2)
+    position = np.array([.25, 0, 0, 1])
+    am = np.matmul(trans, position)
+    bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2] + .05)
+
 
     #t = get_transform(tfBuffer, 'rx200/board_link','rx200/base_link')
     t = get_transform(tfBuffer, 'rx200/base_link','rx200/board_link')
@@ -91,3 +133,4 @@ if __name__ == '__main__':
             print(am)
             bot.arm.set_ee_pose_components(x=am[0], y=am[1], z=am[2])
             time.sleep(1)
+            exit()
