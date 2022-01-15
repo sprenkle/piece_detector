@@ -17,11 +17,13 @@ from std_msgs.msg import String
 def imageCallback(data):
     try:
         cv_image = bridge.imgmsg_to_cv2(data, desired_encoding="bgr8")
+
+        cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
+
         pieces = piece_finder.list_detected_pieces(cv_image)
         gamefield = Gamefield()
         for piece in pieces:
             gamefield.piece_data.append(Piecedetected(x = piece[2], y = piece[1], piece = piece[0]))
-
         pub.publish(gamefield)         
 
     except CvBridgeError as e:
@@ -33,7 +35,7 @@ def imageCallback(data):
 def talker():
     while not rospy.is_shutdown():
         
-        data = rospy.wait_for_message('/camera/color/image_raw', msg_Image, timeout=10)
+        data = rospy.wait_for_message('/camera/color/image_raw', msg_Image, timeout=100)
         imageCallback(data)
 
 

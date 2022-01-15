@@ -1,83 +1,150 @@
-import numpy as np
+#!/usr/bin/env python3  
+
+import rospy
+import tf2_ros
+from geometry_msgs.msg import TransformStamped, Quaternion, Point
 from interbotix_xs_modules.arm import InterbotixManipulatorXS
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from interbotix_common_modules import angle_manipulation as ang
+import numpy as np
+import numpy as np
 import time
 
 class ChessBoard:
 
     def __init__(self):
-        print("init Chessboard")
-        self.piece_list = []
-        self.piece_list.append(np.array([[0.92785726,0.36603603,-0.071404,0.29661233],[-0.36495696,0.93060068,0.02808556,-0.11666744],[0.07672894,0.,0.99705199,0.12724748],[0.,0.,0.,1.]]))
-        print("init Chessboard 1")
-        self.piece_list.append(np.array([[0.96091264,0.26639822,-0.07535832,0.29478442],[-0.26558277,0.96386305,0.02082798,-0.08147428],[0.07818364,0.,0.99693897,0.12580184],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.98342183,0.16411419,-0.07712358,0.29420367],[-0.16361183,0.98644135,0.01283105,-0.04894665],[0.07818364,0.,0.99693897,0.12331044],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99649638,0.02979442,-0.07814893,0.2928859],[-0.02970322,0.99955605,0.00232944,-0.00873024],[0.07818364,0.,0.99693897,0.12401635],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99275128,-0.09125594,-0.0782128,0.29306277],[0.09097405,0.99582747,-0.00716729,0.02685578],[0.07854051,0.,0.99691092,0.12188458],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.97661998,-0.20073206,-0.07694191,0.29573614],[0.20011198,0.97964618,-0.0157656,0.06059711],[0.07854051,0.,0.99691092,0.12188498],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.94717433,-0.31191719,-0.07462207,0.29581976],[0.31095366,0.95010929,-0.02449813,0.09711648],[0.07854051,0.,0.99691092,0.12720435],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.91437807,-0.39840084,-0.07203825,0.29306614],[0.39717015,0.91721141,-0.0312906,0.12729649],[0.07854051,0.,0.99691092,0.12720499],[0.,0.,0.,1.]]))
-        print("init Chessboard 2")
-
-        self.piece_list.append(np.array([[0.93822865,0.32773174,-0.11099055,0.32426134],[-0.32546232,0.94477082,0.03850153,-0.11248308],[0.1174788,0.,0.99307539,0.13014746],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.96819145,0.23484716,-0.08632565,0.32379044],[-0.2339192,0.97203231,0.02085665,-0.07822915],[0.08880944,0.,0.99604863,0.12925604],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.9857171,0.1420794,-0.09041702,0.32975182],[-0.14148543,0.98985526,0.01297806,-0.0473311],[0.09134368,0.,0.99581943,0.12968787],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99530976,0.03198994,-0.09129693,0.32574973],[-0.03185621,0.99948819,0.00292208,-0.01042605],[0.09134368,0.,0.99581943,0.1296907],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99221257,-0.08503458,-0.09101283,0.32473607],[0.08467908,0.996378,-0.00776737,0.02771418],[0.09134368,0.,0.99581943,0.1296907],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.98064196,-0.17392551,-0.0899515,0.32602761],[0.1731984,0.98475881,-0.015887,0.05758214],[0.09134368,0.,0.99581943,0.13020958],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.95438476,-0.28545744,-0.087543,0.3252578],[0.28426407,0.95839139,-0.02607473,0.09687823],[0.09134368,0.,0.99581943,0.13229023],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.92214699,-0.37747867,-0.08458592,0.32686396],[0.37590059,0.92601828,-0.03448029,0.13324162],[0.09134368,0.,0.99581943,0.13246864],[0.,0.,0.,1.]]))
-        print("init Chessboard 3")
-
-        self.piece_list.append(np.array([[0.95358174,0.28815098,-0.08746934,0.3606314],[-0.28694635,0.95758499,0.02632077,-0.10851913],[0.09134368,0.,0.99581943,0.13130507],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.97306608,0.21058266,-0.09379419,0.35902095],[-0.20961115,0.97757606,0.02020449,-0.0773378],[0.09594567,0.,0.99538657,0.13641035],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.98806195,0.12109085,-0.09523964,0.36199582],[-0.12053221,0.99264143,0.01161814,-0.04415933],[0.09594567,0.,0.99538657,0.13630892],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99527911,0.01469403,-0.09593531,0.35869378],[-0.01462624,0.99989204,0.00140983,-0.00527123],[0.09594567,0.,0.99538657,0.13630733],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99300609,-0.06911814,-0.09571621,0.35901682],[0.06879927,0.99760848,-0.00663159,0.02487406],[0.09594567,0.,0.99538657,0.13630629],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.98059832,-0.17173488,-0.09452022,0.35453085],[0.17094259,0.9851432,-0.01647722,0.06180351],[0.09594567,0.,0.99538657,0.13630629],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.96407868,-0.24883068,-0.09292789,0.35788858],[0.24768272,0.968547,-0.02387423,0.09194563],[0.09594567,0.,0.99538657,0.13825263],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.93850079,-0.33321588,-0.09046243,0.35853368],[0.33167861,0.94285056,-0.03197062,0.12671055],[0.09594567,0.,0.99538657,0.13396325],[0.,0.,0.,1.]]))
-        print("init Chessboard 4")
- 
-        self.piece_list.append(np.array([[0.95470114,0.27127506,-0.122293,0.38723964],[-0.26907647,0.96250187,0.03446751,-0.10914104],[0.12705741,0.,0.99189536,0.13514608],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.97217222,0.19842683,-0.12453097,0.38844699],[-0.19681865,0.9801157,0.0252116,-0.07864205],[0.12705741,0.,0.99189536,0.13384251],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.98618491,0.10714984,-0.12632593,0.38998367],[-0.10628143,0.99424288,0.01361418,-0.04202865],[0.12705741,0.,0.99189536,0.14272702],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.99182621,0.01180858,-0.12704856,0.38698797],[-0.01171288,0.99993028,0.00150037,-0.0045701],[0.12705741,0.,0.99189536,0.14141186],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.9900663,-0.06070103,-0.12682312,0.38628387],[0.06020907,0.99815599,-0.00771252,0.02349115],[0.12705741,0.,0.99189536,0.14086196],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.9796328,-0.15675678,-0.12548663,0.38825696],[0.15548632,0.98763724,-0.01991711,0.06162375],[0.12705741,0.,0.99189536,0.14086196],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.96258927,-0.2412844,-0.12330343,0.38399664],[0.23932887,0.97045445,-0.03065697,0.09547321],[0.12705741,0.,0.99189536,0.14331973],[0.,0.,0.,1.]]))
-        self.piece_list.append(np.array([[0.94392916,-0.30657789,-0.12250611,0.38716709],[0.3040281,0.95184558,-0.03945773,0.12470181],[0.12870377,0.,0.99168308,0.13315239],[0.,0.,0.,1.]]))
-        print("init Chessboard 5")
-        self.bot = InterbotixManipulatorXS("rx200", "arm", "gripper")
+        self.set_robot_black()
+        self.piece_height = {1:0.033, 2:0.035, 3:.023, 4:0.03, 5:0.03, 6:.024}
+        self.piece_pickup = {1:1.5, 2:2.5, 3:3.5, 4:4.5, 5:5.5, 6:6.5}
+        self.bot = InterbotixManipulatorXS("rx200", "arm", "gripper", gripper_pressure=1)
         self.bot.dxl.robot_set_motor_registers("single", "shoulder", "Position_P_Gain", 1500)
         self.bot.dxl.robot_set_motor_registers("single", "elbow", "Position_P_Gain", 1500)
         self.bot.dxl.robot_set_motor_registers("single", "wrist_angle", "Position_P_Gain", 1500)
+        self.bot.dxl.robot_set_motor_registers("single", "gripper", "Position_P_Gain", 1500)
+        self.bot.dxl.robot_torque_enable("group", "arm", True)
+        tfBuffer = tf2_ros.Buffer()
+        listener = tf2_ros.TransformListener(tfBuffer)
+        self.trans = self.get_transform(tfBuffer,'rx200/base_link', 'rx200/board')
+        self.bot.arm.go_to_home_pose()
+        self.pickupHeight = .11
 
-        print("init Chessboard 6")
+
+    def get_transform(self, tfBuffer, target_frame, source_frame):
+        # try:
+        #     trans = tfBuffer.lookup_transform(target_frame, source_frame, rospy.Time(0), rospy.Duration(4.0))
+        # except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        #     rospy.logerr("Failed to look up the transform from '%s' to '%s'." % (target_frame, source_frame))
+        #     return np.identity(4)
+        # x = trans.transform.translation.x
+        # y = trans.transform.translation.y
+        # z = trans.transform.translation.z
+        # quat = trans.transform.rotation
+        # quat_list = [quat.x, quat.y, quat.z, quat.w]
+        # rpy = euler_from_quaternion(quat_list)
+        x = 0.252
+        y = -0.12
+        z = .0875
+        rpy = [-0.01, -.07, 0.019] # -.075
+        T_TargetSource = ang.poseToTransformationMatrix([x, y, z, rpy[0], rpy[1], rpy[2]])
+        return T_TargetSource
 
 
+    def set_robot_white(self):
+        self.board = np.array([ 
+                    [3, 5, 4, 1, 2, 4, 5, 3],
+                    [6, 6, 6, 6, 6, 6, 6, 6],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [6, 6, 6, 6, 6, 6, 6, 6],
+                    [3, 5, 4, 1, 2, 4, 5, 3],
+                ])
+
+    def set_robot_black(self):
+        self.board = np.array([ 
+                    [3, 5, 4, 2, 1, 4, 5, 3],
+                    [6, 6, 6, 6, 6, 6, 6, 6],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [6, 6, 6, 6, 6, 6, 6, 6],
+                    [3, 5, 4, 2, 1, 4, 5, 3],
+                ])
+
+    def set_pose(self, ar):
+        #print(ar)
+        #print('Start of Move')
+        self.bot.arm.set_ee_pose_components(x=ar[0] * 1.02, y=ar[1] * 1.03, z=ar[2], blocking=True)
+        #print('End of Move')
+
+    def attract(self):
+        #self.bot.gripper.open(delay=2)
+        self.bot.gripper.attract()
+
+    def release(self):
+        #self.bot.gripper.close()
+        self.bot.gripper.release()
+
+    def get_board_coordinates(self, x, y):
+        board_x = 0.015625 + (.03125 * x)
+        board_y = 0.015625 + (.03125 * y)
+        return board_x, board_y
+
+
+    def pick_up(self, x, y):
+        bx, by = self.get_board_coordinates(x, y)
+        fromHigh = np.matmul(self.trans, np.array([bx, by, self.pickupHeight, 1]))
+        fromPickup = np.matmul(self.trans, np.array([bx, by, self.piece_height[self.board[x, y]], 1]))
+
+        self.attract()
+        self.set_pose(fromHigh)
+        self.set_pose(fromPickup)
+        self.set_pose(fromHigh)
+
+
+    def put_down(self, x, y):
+        bx, by = self.get_board_coordinates(x, y)
+        toHigh = np.matmul(self.trans, np.array([bx, by, self.pickupHeight, 1]))
+        toPickup = np.matmul(self.trans, np.array([bx, by, self.piece_height[self.board[x, y]]+.005, 1]))
+        
+        self.set_pose(toHigh)
+        self.set_pose(toPickup)
+        self.release()
+        self.set_pose(toHigh)
+
+    def remove_piece(self, x, y):
+        self.pick_up(x, y)
+        self.bot.arm.set_ee_pose_components(x=0.3, y=-.2,z=0.25)
+        self.release()
 
     def move(self, fromX, fromY, toX, toY):
-        print('move')
-        print(fromY * 8 + fromX)
-        fromArray = self.piece_list[fromY * 8 + fromX]
-        print(fromArray)
-        toArray = self.piece_list[toY * 8 + toX]
-        print(toArray)
-        self.bot.arm.go_to_home_pose()
-        _, success = self.bot.arm.set_ee_pose_matrix(fromArray, self.bot.arm.get_joint_commands(), True, 1, 0.3, False)
+        if self.board[toX, toY] != 0:
+            self.remove_piece(toX, toY)
 
-        time.sleep(3)
+        self.pick_up(fromX, fromY)
+        self.put_down(toX , toY)
 
-        self.bot.arm.go_to_home_pose()
-        _, success = self.bot.arm.set_ee_pose_matrix(toArray, self.bot.arm.get_joint_commands(), True, 1, 0.3, False)
-
-        time.sleep(3)
-
-        self.bot.arm.go_to_home_pose()
-
+        self.board[toX, toY] = self.board[fromX, fromY] 
+        self.board[fromX, fromY] = 0
+        #self.bot.arm.go_to_sleep_pose()
+    
+    def sleep(self):
+        self.bot.arm.go_to_sleep_pose()
 
 
 if __name__ == '__main__':
     print("move.py")
     chessBoard2 = ChessBoard()
-    chessBoard2.move(0,0,7,3)
+    # chessBoard2.move(1,0,6,0)
+    # chessBoard2.move(6,0,1,0)
+    for i in range(8):
+        chessBoard2.move(0, i, 7 ,i)
+        chessBoard2.move(1, i, 6 ,i)
+    chessBoard2.sleep()
+    # chessBoard2.move(0,3,7,3)
+    # chessBoard2.move(7,3,0,3)
+    #chessBoard2.move(0,4,7,4)
+    #chessBoard2.move(7,4,0,4)
+    #chessBoard2.bot.arm.set_ee_pose_components(x=0.3, y=-.2,z=0.25)

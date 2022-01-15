@@ -9,6 +9,8 @@ import cv2
 import os 
 import sys
 from chessbot import board 
+#from game_msgs.srv import MovePieceCmd, MovePieceCmdRequest
+from std_msgs.msg import String
 import numpy as np
 
 blank_image = np.zeros((480, 640,3), np.uint8)
@@ -51,7 +53,9 @@ def imageCallback(data):
 
         msg = process_move(current_piece_array)
         if msg :
-            pub.publish(msg)
+            #pub.publish(msg)
+            print(msg)
+
         
         cv2.imshow('image',blank_image)
         cv2.waitKey(1)          

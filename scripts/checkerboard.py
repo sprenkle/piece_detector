@@ -10,6 +10,7 @@ objp[:,:2] = np.mgrid[0:7,0:7].T.reshape(-1,2)
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 images = glob.glob('/home/david/stuff/testimage_Color.png')
+print(images)
 for fname in images:
     img = cv.imread(fname)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -52,6 +53,8 @@ for fname in glob.glob('/home/david/stuff/testimage_Color.png'):
         # Find the rotation and translation vectors.
         ret,rvecs, tvecs = cv.solvePnP(objp, corners2, mtx, dist)
         # project 3D points to image plane
+        print(f'rvecs {rvecs}')
+        print(f'tvecs {tvecs}')
         imgpts, jac = cv.projectPoints(axis, rvecs, tvecs, mtx, dist)
         img = draw(img,corners2,imgpts)
         cv.imshow('img',img)
