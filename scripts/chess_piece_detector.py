@@ -1,15 +1,18 @@
 #!/usr/bin/env python3  
 
+from tkinter import W
 import rospy
 from game_msgs.msg import Gamefield
 from game_msgs.msg import PieceMove
 from sensor_msgs.msg import Image as msg_Image
+from game_msgs.msg import ChessMove, GameStatus
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import os 
 import sys
 from chessbot import board 
 import numpy as np
+from chessbot import fen
 
 blank_image = np.zeros((480, 640,3), np.uint8)
 
@@ -17,12 +20,15 @@ name_dict = {"Pawn":1, "Knight":2, "Bishop":3, "Rook":4, "Queen":5, "King":6}
 
 last_update = []
 num_updates = 0
+color = "black"
+mfen = {}
 
 def image_pos(value):
     return value * 20 + 50
 
 def imageCallback(data):
-    global last_update, num_updates
+    global last_update, num_updates, color
+    print('have update')
     try:
         blank_image = np.zeros((480, 640,3), np.uint8)
         current_piece_array = np.full((8,8),-1, np.int32)
@@ -35,22 +41,26 @@ def imageCallback(data):
             if px != -1 and py != -1 and px < 8 and py < 8:
                 current_piece_array[px, py] = piece.piece
                 if piece.piece == 0:
-                    color = (255, 0, 0)
+                    color_w = (255, 0, 0)
                 else:
-                    color = (0, 255, 0)
-                blank_image = cv2.circle(blank_image, (image_pos(px), image_pos(py)), 3, color, 2)
+                    color_w = (0, 255, 0)
+                blank_image = cv2.circle(blank_image, (image_pos(px), image_pos(py)), 3, color_w, 2)
 
         if np.array_equal(last_update, current_piece_array):
-            if num_updates < 3:
+            if num_updates < 0:
                 num_updates = num_updates + 1
                 return
         else:
             last_update = current_piece_array
             num_updates = 0
             return
-
+        
+        print(current_piece_array)
         msg = process_move(current_piece_array)
-        if msg :
+        print(f'msg = {msg}')
+        if msg: # and color == msg.color:
+            print(f'color is {color}  msg.color = {msg.color}')
+            # print('Publishing')
             pub.publish(msg)
         
         cv2.imshow('image',blank_image)
@@ -68,22 +78,27 @@ def diff_square(new_pos, x, y):
     old_value_color = old_pos[x, y, 1]
     if old_value_rank == 0:
         if new_value != -1:
+            print(f'new piece at {x} {y}')
             return True
         return False
     if new_value != old_value_color:
+        print(f'new piece at 2 {x} {y}  new_value {new_value}  old_value_color {old_value_color}')
         return True
     return False
     
-    
 
 def process_move(new_pos):
+    global old_pos, mfen
+    if not mfen:
+        return
     # Find Empty board
     from_x = -1
     from_y = -1
     to_x = -1
     to_y = -1
-
     capture = False
+
+    print(f'old_pos[3,3] = {old_pos[3,3]} {mfen.piece_at(3,3)}' )
 
     # Find where it came from
     for i in range(8):
@@ -91,7 +106,6 @@ def process_move(new_pos):
             if old_pos[i, j, 0] > 0 and new_pos[i, j] == -1:
                 from_x = i
                 from_y = j
-                print(f'Found From ')
 
     if from_x < 0 or from_y < 0:
         return 
@@ -125,103 +139,103 @@ def process_move(new_pos):
     return PieceMove(from_x = from_x, from_y = from_y, to_x = to_x, to_y = to_y, 
                         name=name, color = piece_color[old_pos[to_x, to_y,1]], captured=captured_piece_name)
 
-def talker():
-    while not rospy.is_shutdown():
-        
-        data = rospy.wait_for_message('piece_detector', Gamefield)
-        imageCallback(data)
+
+def chess_status(data):
+    global old_pos, color, mfen
+
+    mfen = fen.Fen(data.board, data.white_player == "human")
+
+    if data.white_player == "human":
+        color = "white"
+    
+    if data.black_player == "human":
+        color = "black"
+
+    col = 0
+    row = 0
+    old_pos = np.zeros((8,8,2),np.int32)
+    b = 1
+    w = 0
+    for i in range(100):
+        c = data.board[i:i+1]
+        if c == '/':
+            row = row + 1
+            col = 0
+        elif c.isnumeric():
+            n = int(c)
+            for pos in range(n):
+                old_pos[col,row, 0] = 0
+                col = col + 1
+        elif c == 'p':
+            old_pos[col, row, 0] = 1
+            old_pos[col, row, 1] = b
+            col += 1
+        elif c == 'n':
+            old_pos[col, row, 0] = 2
+            old_pos[col, row, 1] = b
+            col += 1
+        elif c == 'b':
+            old_pos[col, row, 0] = 3
+            old_pos[col, row, 1] = b
+            col += 1
+        elif c == 'r':
+            old_pos[col, row, 0] = 4
+            old_pos[col, row, 1] = b
+            col += 1
+        elif c == 'q':
+            old_pos[col, row, 0] = 5
+            old_pos[col, row, 1] = b
+            col += 1
+        elif c == 'k':
+            old_pos[col, row, 0] = 6
+            old_pos[col, row, 1] = b
+            col += 1
+        elif c == 'P':
+            old_pos[col, row, 0] = 1
+            old_pos[col, row, 1] = w
+            col += 1
+        elif c == 'N':
+            old_pos[col, row, 0] = 2
+            old_pos[col, row, 1] = w
+            col += 1
+        elif c == 'B':
+            old_pos[col, row, 0] = 3
+            old_pos[col, row, 1] = w
+            col += 1
+        elif c == 'R':
+            old_pos[col, row, 0] = 4
+            old_pos[col, row, 1] = w
+            col += 1
+        elif c == 'Q':
+            old_pos[col, row, 0] = 5
+            old_pos[col, row, 1] = w
+            col += 1
+        elif c == 'K':
+            old_pos[col, row, 0] = 6
+            col += 1
+            old_pos[col, row, 1] = w
+        if row >= 7 and col > 7:
+            break 
 
 
-        #pub.publish(hello_str)
-        
-        
-        rate.sleep()
 
 if __name__ == '__main__':
     try:
         piece_name = ["Empty", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"]
-        piece_color = ["White", "Black"]
+        piece_color = ["white", "black"]
 
         first_image = False
         old_pos = np.zeros((8,8,2),np.int32)
-
-        # TODO put this in a service 
-
-        old_pos[0,0,0] = 4
-        old_pos[1,0,0] = 2
-        old_pos[2,0,0] = 3
-        old_pos[3,0,0] = 6
-        old_pos[4,0,0] = 5
-        old_pos[5,0,0] = 3
-        old_pos[6,0,0] = 2
-        old_pos[7,0,0] = 4
-        old_pos[0,0,1] = 0
-        old_pos[1,0,1] = 0
-        old_pos[2,0,1] = 0
-        old_pos[3,0,1] = 0
-        old_pos[4,0,1] = 0
-        old_pos[5,0,1] = 0
-        old_pos[6,0,1] = 0
-        old_pos[7,0,1] = 0
-
-        old_pos[0,1,0] = 1
-        old_pos[1,1,0] = 1
-        old_pos[2,1,0] = 1
-        old_pos[3,1,0] = 1
-        old_pos[4,1,0] = 1
-        old_pos[5,1,0] = 1
-        old_pos[6,1,0] = 1
-        old_pos[7,1,0] = 1
-        old_pos[0,1,1] = 0
-        old_pos[1,1,1] = 0
-        old_pos[2,1,1] = 0
-        old_pos[3,1,1] = 0
-        old_pos[4,1,1] = 0
-        old_pos[5,1,1] = 0
-        old_pos[6,1,1] = 0
-        old_pos[7,1,1] = 0
-
-        old_pos[0,6,0] = 1
-        old_pos[1,6,0] = 1
-        old_pos[2,6,0] = 1
-        old_pos[3,6,0] = 1
-        old_pos[4,6,0] = 1
-        old_pos[5,6,0] = 1
-        old_pos[6,6,0] = 1
-        old_pos[7,6,0] = 1
-        old_pos[0,6,1] = 1
-        old_pos[1,6,1] = 1
-        old_pos[2,6,1] = 1
-        old_pos[3,6,1] = 1
-        old_pos[4,6,1] = 1
-        old_pos[5,6,1] = 1
-        old_pos[6,6,1] = 1
-        old_pos[7,6,1] = 1
-
-        old_pos[0,7,0] = 4
-        old_pos[1,7,0] = 2
-        old_pos[2,7,0] = 3
-        old_pos[3,7,0] = 6
-        old_pos[4,7,0] = 5
-        old_pos[5,7,0] = 3
-        old_pos[6,7,0] = 2
-        old_pos[7,7,0] = 4
-        old_pos[0,7,1] = 1
-        old_pos[1,7,1] = 1
-        old_pos[2,7,1] = 1
-        old_pos[3,7,1] = 1
-        old_pos[4,7,1] = 1
-        old_pos[5,7,1] = 1
-        old_pos[6,7,1] = 1
-        old_pos[7,7,1] = 1
         print('Made it here 1')
         move = 0
         pub = rospy.Publisher('chess_piece_detector', PieceMove, queue_size=10)
         rospy.init_node('chessPieceDetector', anonymous=True)
-        rate = rospy.Rate(1)
-        board = board.Board(423, 640, 480, 123, 459, 93, 430)
-        rospy.sleep(3)
-        talker()
+        rospy.Subscriber('/chess_status', GameStatus, chess_status)
+        rospy.Subscriber('/piece_detector', Gamefield, imageCallback)
+
+        board = board.Board(423, 640, 480, 93, 435, 103, 445)
+
+        rospy.spin()
     except rospy.ROSInterruptException:
         pass
 

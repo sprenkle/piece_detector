@@ -1,3 +1,5 @@
+#!/usr/bin/env python3  
+
 from interbotix_xs_modules.arm import InterbotixManipulatorXS
 
 import numpy as np
