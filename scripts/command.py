@@ -5,7 +5,7 @@ from game_msgs.msg import GameStart, PlayerStatus, ChessMove, GameStatus
 import sys
 from stockfish import Stockfish
 from game_msgs.srv import GetFEN, BestMove, IsValidMove
-
+#"r2qkb1r/p4ppp/b1p1p3/3pn3/Np6/1B5P/PPPP1PP1/R1BQ1RK1 w kq - 2 12"
 
 class ChessCommand:
 
@@ -47,7 +47,7 @@ class ChessCommand:
     def setup_board(self, robot_color):
         game_status = GameStatus()
         game_status.board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # stardard start
-        #game_status.board = "rnbqkbnr/ppp2ppp/8/4p3/3Pp3/5P2/PPP3PP/RNBQKBNR w KQkq - 0 4"
+        #game_status.board = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 4"
         if robot_color == 'white':
             game_status.white_player = "robot"
             game_status.black_player = "human"

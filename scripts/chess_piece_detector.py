@@ -26,9 +26,9 @@ mfen = {}
 def image_pos(value):
     return value * 20 + 50
 
-def imageCallback(data):
+def pieces_detected(data):
     global last_update, num_updates, color
-    print('have update')
+    rospy.loginfo("pieces_detected", logger_name="chess")
     try:
         blank_image = np.zeros((480, 640,3), np.uint8)
         current_piece_array = np.full((8,8),-1, np.int32)
@@ -55,12 +55,11 @@ def imageCallback(data):
             num_updates = 0
             return
         
-        print(current_piece_array)
+        rospy.loginfo(f'calling process_move', logger_name="chess")
         msg = process_move(current_piece_array)
-        print(f'msg = {msg}')
+        rospy.loginfo(f'msg = {msg}', logger_name="chess")
+
         if msg: # and color == msg.color:
-            print(f'color is {color}  msg.color = {msg.color}')
-            # print('Publishing')
             pub.publish(msg)
         
         cv2.imshow('image',blank_image)
@@ -85,7 +84,15 @@ def diff_square(new_pos, x, y):
         print(f'new piece at 2 {x} {y}  new_value {new_value}  old_value_color {old_value_color}')
         return True
     return False
-    
+
+def castle_right(new_pos, x, y):
+    global old_pos
+    #rospy.loginfo(f'{old_pos[x, y, 0]} {old_pos[x+1, y, 0]} {old_pos[x+2, y, 0]} {old_pos[x+3, y, 0]} {new_pos[x, 0]} {new_pos[x + 1, 0]} {new_pos[x + 2, 0]} {new_pos[x + 3, 0]}', logger_name="chess")
+    return old_pos[x, y, 0] == 6 and old_pos[x + 1, y, 0] == 0 and old_pos[x + 2, y, 0] == 0 and ( old_pos[x + 3, y, 0] == 4  or ( old_pos[x + 3, y, 0] == 0 and old_pos[x + 4, y, 0] == 4 ) ) and new_pos[x, y] == -1 and new_pos[x + 1, y] > -1 and new_pos[x + 2, y] > -1 and new_pos[x + 3 ,y] == -1 
+
+def castle_left(new_pos, x, y):
+    global old_pos
+    return old_pos[x, y, 0] == 6 and old_pos[x - 1, y, 0] == 0 and old_pos[x - 2, y, 0] == 0 and ( old_pos[x - 3, y, 0] == 4  or ( old_pos[x - 3, y, 0] == 0 and old_pos[x - 4, y, 0] == 4 ) )and new_pos[x, y] == -1 and new_pos[x - 1, y] > -1 and new_pos[x - 2, y] > -1 and new_pos[x - 3 ,y] == -1 
 
 def process_move(new_pos):
     global old_pos, mfen
@@ -98,7 +105,41 @@ def process_move(new_pos):
     to_y = -1
     capture = False
 
-    print(f'old_pos[3,3] = {old_pos[3,3]} {mfen.piece_at(3,3)}' )
+    rospy.loginfo(f'Process_move', logger_name="chess")
+
+    # Black King Side top 
+    if castle_right(new_pos, 4,0):
+        return PieceMove(from_x = 4, from_y = 0, to_x = 6, to_y = 0, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+
+ 
+    # Black King Side bottom
+    if castle_left(new_pos, 3,7):
+        return PieceMove(from_x = 3, from_y = 7, to_x = 1, to_y = 7, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+ 
+    # Black Queen Side top
+    if castle_left(new_pos, 4,0):
+        return PieceMove(from_x = 4, from_y = 0, to_x = 2, to_y = 0, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+
+    # Black Queen Side bottom
+    if castle_right(new_pos, 3,7):
+        return PieceMove(from_x = 3, from_y = 7, to_x = 5, to_y = 7, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+
+    # White King Side Top
+    if castle_left(new_pos, 3,0):
+        return PieceMove(from_x = 3, from_y = 0, to_x = 1, to_y = 0, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+ 
+    # White King Side Bottom
+    if castle_right(new_pos, 4,7):
+        return PieceMove(from_x = 4, from_y = 7, to_x = 6, to_y = 7, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+
+    # White Queen Side Top
+    if castle_right(new_pos, 3,0):
+        return PieceMove(from_x = 3, from_y = 0, to_x = 5, to_y = 0, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+
+    # White Queen Side Bottom
+    if castle_left(new_pos, 4,7):
+        return PieceMove(from_x = 4, from_y = 7, to_x = 2, to_y = 7, name='King', color = piece_color[old_pos[from_x, from_y,1]])
+
 
     # Find where it came from
     for i in range(8):
@@ -231,7 +272,7 @@ if __name__ == '__main__':
         pub = rospy.Publisher('chess_piece_detector', PieceMove, queue_size=10)
         rospy.init_node('chessPieceDetector', anonymous=True)
         rospy.Subscriber('/chess_status', GameStatus, chess_status)
-        rospy.Subscriber('/piece_detector', Gamefield, imageCallback)
+        rospy.Subscriber('/piece_detector', Gamefield, pieces_detected)
 
         board = board.Board(423, 640, 480, 93, 435, 103, 445)
 

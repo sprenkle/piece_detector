@@ -16,8 +16,7 @@ class HumanPlayer:
         self.pub_move = rospy.Publisher(f'human_move', ChessMove, queue_size=10)
 
         rospy.Subscriber('/chess_status', GameStatus,self.chess_status_callback)
-        rospy.Subscriber('/chess_move', ChessMove,self.chess_move_callback)
-        
+
         rospy.Subscriber('/chess_piece_detector', PieceMove, self.make_move)
 
         rospy.loginfo("Subscribed to chess_start", logger_name="chess")
@@ -30,16 +29,9 @@ class HumanPlayer:
         rospy.loginfo("Done Init ChessCommand", logger_name="chess")
         
 
-    def chess_move_callback(self, data):
-        self.move_number = data.move_number
-        if data.color == self.color:
-            self.your_move = False
-        else:
-            self.your_move = True
-        
     def chess_status_callback(self, data):
-        rospy.loginfo('callback', logger_name="chess")
-        rospy.loginfo(data, logger_name="chess")
+        rospy.loginfo('chess_status callback', logger_name="chess")
+        rospy.loginfo(data.board, logger_name="chess")
 
         my_fen = fen.Fen(data.board, data.white_player == "human") # TODO This could be wrong if human playing both sides
         self.move_number = my_fen.move_num()
@@ -63,13 +55,21 @@ class HumanPlayer:
         if not self.your_move:
             return
 
+        rospy.loginfo(f'{data.name} {data.from_x} {data.from_y} {data.to_x} {data.to_y}', logger_name="chess")
+        if data.name == 'King' and ((data.from_x == 3 and data.to_x == 1) or (data.from_x == 4 and data.to_x == 6)):
+            rospy.loginfo('Castle Detected', logger_name="chess")
+
+        elif data.name == 'King' and ((data.from_x == 3 and data.to_x == 5) or (data.from_x == 4 and data.to_x == 2)):
+            rospy.loginfo('Castle Detected', logger_name="chess")
+            
+
         print(f'{data.from_x} {data.from_y} {data.to_x} {data.to_y}')
         alg_move = self.row_alg_to_num[data.from_x] + self.col_alg_to_num[data.from_y] + self.row_alg_to_num[data.to_x] + self.col_alg_to_num[data.to_y] 
         print(f'{alg_move}  {data.from_x} {data.from_y} {data.to_x} {data.to_y}')
 
-        something = self.is_valid_move(alg_move) 
-        print(f'Is it a valid move  {something}')
-        if not self.is_valid_move(alg_move):
+        valid_move = self.is_valid_move(alg_move) 
+        print(f'Is it a valid move  {valid_move}')
+        if not valid_move:
             print(f'Human move is not valid  {alg_move}')
             return
 
