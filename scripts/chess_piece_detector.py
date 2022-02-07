@@ -27,7 +27,10 @@ def image_pos(value):
     return value * 20 + 50
 
 def pieces_detected(data):
-    global last_update, num_updates, color
+    global last_update, num_updates, color, look
+    if not look:
+        return
+    look = False
     rospy.loginfo("pieces_detected", logger_name="chess")
     try:
         blank_image = np.zeros((480, 640,3), np.uint8)
@@ -73,6 +76,8 @@ def pieces_detected(data):
 
 def diff_square(new_pos, x, y):
     new_value =  new_pos[x, y]
+    if new_value != num_color:
+        return
     old_value_rank = old_pos[x, y, 0]
     old_value_color = old_pos[x, y, 1]
     if old_value_rank == 0:
@@ -87,17 +92,18 @@ def diff_square(new_pos, x, y):
 
 def castle_right(new_pos, x, y):
     global old_pos
-    #rospy.loginfo(f'{old_pos[x, y, 0]} {old_pos[x+1, y, 0]} {old_pos[x+2, y, 0]} {old_pos[x+3, y, 0]} {new_pos[x, 0]} {new_pos[x + 1, 0]} {new_pos[x + 2, 0]} {new_pos[x + 3, 0]}', logger_name="chess")
-    return old_pos[x, y, 0] == 6 and old_pos[x + 1, y, 0] == 0 and old_pos[x + 2, y, 0] == 0 and ( old_pos[x + 3, y, 0] == 4  or ( old_pos[x + 3, y, 0] == 0 and old_pos[x + 4, y, 0] == 4 ) ) and new_pos[x, y] == -1 and new_pos[x + 1, y] > -1 and new_pos[x + 2, y] > -1 and new_pos[x + 3 ,y] == -1 
+    rospy.loginfo(f'{old_pos[x, y, 0]} {old_pos[x+1, y, 0]} {old_pos[x+2, y, 0]} {old_pos[x+3, y, 0]} {new_pos[x, 0]} {new_pos[x + 1, 0]} {new_pos[x + 2, 0]} {new_pos[x + 3, 0]}', logger_name="chess")
+    return old_pos[x, y, 0] == 6 and old_pos[x + 1, y, 0] == 0 and old_pos[x + 2, y, 0] == 0 and ( old_pos[x + 3, y, 0] == 4  or ( x == 3 and old_pos[x + 3, y, 0] == 0 and old_pos[x + 4, y, 0] == 4 ) ) and new_pos[x, y] == -1 and new_pos[x + 1, y] > -1 and new_pos[x + 2, y] > -1 and new_pos[x + 3 ,y] == -1 
 
 def castle_left(new_pos, x, y):
     global old_pos
-    return old_pos[x, y, 0] == 6 and old_pos[x - 1, y, 0] == 0 and old_pos[x - 2, y, 0] == 0 and ( old_pos[x - 3, y, 0] == 4  or ( old_pos[x - 3, y, 0] == 0 and old_pos[x - 4, y, 0] == 4 ) )and new_pos[x, y] == -1 and new_pos[x - 1, y] > -1 and new_pos[x - 2, y] > -1 and new_pos[x - 3 ,y] == -1 
+    return old_pos[x, y, 0] == 6 and old_pos[x - 1, y, 0] == 0 and old_pos[x - 2, y, 0] == 0 and ( old_pos[x - 3, y, 0] == 4  or ( x == 4 and old_pos[x - 3, y, 0] == 0 and old_pos[x - 4, y, 0] == 4 ) )and new_pos[x, y] == -1 and new_pos[x - 1, y] > -1 and new_pos[x - 2, y] > -1 and new_pos[x - 3 ,y] == -1 
 
 def process_move(new_pos):
-    global old_pos, mfen
+    global old_pos, mfen, num_color
     if not mfen:
         return
+    look = False
     # Find Empty board
     from_x = -1
     from_y = -1
@@ -141,15 +147,18 @@ def process_move(new_pos):
         return PieceMove(from_x = 4, from_y = 7, to_x = 2, to_y = 7, name='King', color = piece_color[old_pos[from_x, from_y,1]])
 
 
+
     # Find where it came from
+    print(f'num_color = {num_color}')
     for i in range(8):
         for j in range(8):
-            if old_pos[i, j, 0] > 0 and new_pos[i, j] == -1:
+            if old_pos[i, j, 0] > 0 and old_pos[i, j, 1] == num_color and new_pos[i, j] == -1:
                 from_x = i
                 from_y = j
+                print(f'old_pos[i, j, 1]= {old_pos[i, j, 1]} new_pos[i, j]={new_pos[i, j]}')
 
-    if from_x < 0 or from_y < 0:
-        return 
+    if from_x < 0 or from_y < 0: # from_x/y are preset to -1, return if position not found
+         return
 
     # Check capture
     for i in range(8):
@@ -163,7 +172,7 @@ def process_move(new_pos):
                     capture = True
 
     if to_x < 0 or to_y < 0:
-        return 
+        return
 
     captured = 0
     if capture:
@@ -182,15 +191,17 @@ def process_move(new_pos):
 
 
 def chess_status(data):
-    global old_pos, color, mfen
-
+    global old_pos, color, mfen, num_color, look
+    print(data.board)
     mfen = fen.Fen(data.board, data.white_player == "human")
 
     if data.white_player == "human":
         color = "white"
+        num_color = 0
     
     if data.black_player == "human":
         color = "black"
+        num_color = 1
 
     col = 0
     row = 0
@@ -253,10 +264,11 @@ def chess_status(data):
             col += 1
         elif c == 'K':
             old_pos[col, row, 0] = 6
-            col += 1
             old_pos[col, row, 1] = w
+            col += 1
         if row >= 7 and col > 7:
             break 
+    look = True
 
 
 
@@ -267,13 +279,13 @@ if __name__ == '__main__':
 
         first_image = False
         old_pos = np.zeros((8,8,2),np.int32)
-        print('Made it here 1')
+        print('chess_piece_detector started')
         move = 0
         pub = rospy.Publisher('chess_piece_detector', PieceMove, queue_size=10)
         rospy.init_node('chessPieceDetector', anonymous=True)
         rospy.Subscriber('/chess_status', GameStatus, chess_status)
         rospy.Subscriber('/piece_detector', Gamefield, pieces_detected)
-
+        look = False
         board = board.Board(423, 640, 480, 93, 435, 103, 445)
 
         rospy.spin()

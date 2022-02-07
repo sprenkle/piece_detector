@@ -22,6 +22,7 @@ class RobotPlayer:
         self.move_number = 0
         rospy.wait_for_service('best_move')
         self.pub_move = rospy.Publisher(f'/robot_move', ChessMove, queue_size=10)
+        self.get_move = rospy.ServiceProxy('best_move', BestMove)
         
         
     def chess_status_callback(self, data):
@@ -35,22 +36,27 @@ class RobotPlayer:
         rospy.loginfo(f'self.move_number = {self.move_number} Fen={my_fen.move_num()}  Color = {self.color}', logger_name="chess")
         if self.move_number < my_fen.move_num():
             self.move_number = my_fen.move_num()
-            self.make_move(self.move_number)
+            self.make_move(self.move_number, my_fen)
         else:
             rospy.loginfo(f'robot not making move {self.move_number}  {my_fen.move_num()}', logger_name="chess")
 
 
 
-    def make_move(self, move_number):
+    def make_move(self, move_number, my_fen):
         print(f'make_move {self.move_number}  {move_number}')
-        if self.move_number >  move_number:
-            return
         print(f'moveing Robot  {self.move_number} {move_number}-----------------------------------------------')
 
-        get_move = rospy.ServiceProxy('best_move', BestMove)
-        move = get_move("")
+        move = self.get_move("")
         print(f'found move {move}')
-        self.move_board.move_alg(move.str)
+
+        if not self.move_board.move_alg(move.str, my_fen):
+            rospy.loginfo("move_alg return false", logger_name="chess")
+            return
+
+        if self.move_number >  move_number:
+            return
+
+
         chess_move = ChessMove(color = self.color, move = move.str, move_number = self.move_number, official = True, valid = True)
         self.pub_move.publish(chess_move)
         rospy.loginfo(chess_move, logger_name="chess")

@@ -9,7 +9,7 @@ objp[:,:2] = np.mgrid[0:7,0:7].T.reshape(-1,2)
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
-images = glob.glob('/home/david/stuff/testimage_Color.png')
+images = glob.glob('/home/david/stuff/board_Color_Color.png')
 print(images)
 for fname in images:
     img = cv.imread(fname)
@@ -44,7 +44,7 @@ objp = np.zeros((7*7,3), np.float32)
 objp[:,:2] = np.mgrid[0:7,0:7].T.reshape(-1,2)
 axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
 
-for fname in glob.glob('/home/david/stuff/testimage_Color.png'):
+for fname in images: # glob.glob('/home/david/stuff/testimage_Color.png'):
     img = cv.imread(fname)
     gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
     ret, corners = cv.findChessboardCorners(gray, (7,7),None)

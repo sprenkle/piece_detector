@@ -10,10 +10,11 @@ class ChessEngine:
 
     def __init__(self, to_move='white'):
         self.engine = Stockfish()
+        self.engine.set_skill_level(0)
         rospy.Service('best_move', BestMove, self.best_move)
         rospy.Service('is_valid_move', IsValidMove, self.is_valid_move)
         rospy.Service('get_fen', GetFEN, self.get_FEN)
-        rospy.Service('set_fen', GetFEN, self.set_FEN)
+        #rospy.Service('set_fen', GetFEN, self.set_FEN)
         rospy.Service('set_move', BestMove, self.set_move)
         rospy.Subscriber('/chess_status', GameStatus, self.chess_status_callback)
 
@@ -43,11 +44,11 @@ class ChessEngine:
     def get_FEN(self, data):
         return self.engine.get_fen_position()
 
-    def set_FEN(self, data):
-        print(f'set_FEN  {data}')
-        self.engine.set_fen_position(data)
-        print(self.engine.get_board_visual())
-        return "Ok" 
+    # def set_FEN(self, data):
+    #     print(f'set_FEN  {data}')
+    #     self.engine.set_fen_position(data)
+    #     print(self.engine.get_board_visual())
+    #     return "Ok" 
 
     def chess_move_callback(self, data):
         if data.valid and data.official:

@@ -47,7 +47,7 @@ class ChessCommand:
     def setup_board(self, robot_color):
         game_status = GameStatus()
         game_status.board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # stardard start
-        #game_status.board = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 4"
+        #game_status.board = "r1bqkb1r/ppp2ppp/2N2n2/3p4/3Pp3/6P1/PPP1PPBP/RNBQ1RK1 b kq - 0 7"
         if robot_color == 'white':
             game_status.white_player = "robot"
             game_status.black_player = "human"

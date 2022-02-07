@@ -52,7 +52,9 @@ class HumanPlayer:
 
 
     def make_move(self, data):
+        rospy.loginfo(f'make_move', logger_name="chess")
         if not self.your_move:
+            rospy.loginfo(f'Not Humans move', logger_name="chess")
             return
 
         rospy.loginfo(f'{data.name} {data.from_x} {data.from_y} {data.to_x} {data.to_y}', logger_name="chess")
@@ -66,6 +68,9 @@ class HumanPlayer:
         print(f'{data.from_x} {data.from_y} {data.to_x} {data.to_y}')
         alg_move = self.row_alg_to_num[data.from_x] + self.col_alg_to_num[data.from_y] + self.row_alg_to_num[data.to_x] + self.col_alg_to_num[data.to_y] 
         print(f'{alg_move}  {data.from_x} {data.from_y} {data.to_x} {data.to_y}')
+
+        if data.name == 'Pawn' and (data.to_y == 0 or data.to_y == 7):
+            alg_move = alg_move + "q"
 
         valid_move = self.is_valid_move(alg_move) 
         print(f'Is it a valid move  {valid_move}')
